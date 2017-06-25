@@ -1,0 +1,47 @@
+#!/bin/sh
+
+ADDONNAME=check_mk_agent
+ADDONDIR=/usr/local/addons/${ADDONNAME}
+#WWWDIR=/usr/local/etc/config/addons/www/${ADDONNAME}
+RCDDIR=/usr/local/etc/config/rc.d
+
+case "$1" in
+
+  ""|start)
+    tclsh $ADDONDIR/server.tcl &
+    ;;
+
+  stop)
+    tclsh $ADDONDIR/stop.tcl
+    ;;
+
+  restart|reload)
+    tclsh $ADDONDIR/stop.tcl
+    sleep 2
+    tclsh $ADDONDIR/server.tcl &
+    ;;
+
+  info)
+    echo "Info: <b>(Inoffical) check_mk agent</b>"
+    echo "Version: 1.0"
+    echo "Name: check_mk_agent"
+    echo "Operations: uninstall restart"
+    ;;
+
+  uninstall)
+    tclsh $ADDONDIR/stop.tcl
+
+    rm -rf ${ADDONDIR}
+    rm -rf ${WWWDIR}
+    rm -f ${RCDDIR}/${ADDONNAME}
+    ;;
+
+  *)
+    echo "Usage: check_mk_agent {start|stop|restart|info|uninstall}" >&2
+    exit 1
+    ;;
+
+esac
+
+exit $?
+

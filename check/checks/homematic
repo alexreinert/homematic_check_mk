@@ -1,0 +1,167 @@
+#!/usr/bin/python
+
+def parse_homematic(info):
+  result = { }
+  for line in info:
+    key = line[0]
+    device = result.get(key)
+    if key == 'SVC_MSG':
+      if device is None:
+        device = []
+        result[key] = device
+      device.append(line[1:])
+    else:
+      if device is None:
+        device = { }
+        result[key] = device
+      device[line[1]] = line[2:]
+  return result
+
+def inventory_homematic(parsed):
+  yield 'Low Battery devices', None
+  yield 'Unreachable devices', None
+  yield 'Service Messages', None
+
+def check_homematic(item, params, parsed):
+  messages = parsed.get('SVC_MSG', None);
+
+  state = 0
+  devices = []
+
+  if messages is not None:
+    for msg in messages:
+      if item == 'Low Battery devices':
+        if msg[1] == 'LOWBAT':
+          state = 2
+          devices.append(msg[0])
+      elif item == 'Unreachable devices':
+        if msg[1] == 'UNREACH':
+          state = 2
+          devices.append(msg[0])
+        elif msg[1] == 'STICKY_UNREACH':
+          state = max(state, 1)
+          devices.append(msg[0])
+      elif item == 'Service Messages':
+        if msg[1] not in [ 'LOWBAT', 'UNREACH', 'STICKY_UNREACH' ]:
+          if msg[1] in [ 'CONFIG_PENDING', 'DEVICE_IN_BOOTLOADER', 'UPDATE_PENDING', 'USBH_POWERFAIL' ]:
+            state = max(state, 1)
+          else:
+            state = 2
+          devices.append(msg[0] + ':' + msg[1])
+
+  if state == 0:
+    return 0, 'No issues reported'
+
+  return state, ', '.join(devices)
+
+check_info['homematic'] = {
+  'check_function':      check_homematic,
+  'inventory_function':  inventory_homematic,
+  'parse_function':      parse_homematic,
+  'service_description': "Homematic %s",
+}
+
+def inventory_homematic_humidity(parsed):
+  for line in parsed:
+    data = parsed[line]
+    if isinstance(data, dict):
+      temperature = data.get('TEMPERATURE', data.get('ACTUAL_TEMPERATURE', None))
+      humidity = data.get('HUMIDITY', None)
+
+      if temperature is not None and humidity is not None:
+        yield line, { }
+
+#    data = parsed[line]
+#    if isinstance(data, dict) and data.get('HSSTYPE', 'UNKNOWN') in [ [u'HM-WDS10-TH-O'], [u'HM-WDS20-TH-O'], [u'HM-WDS40-TH-I'], [u'HM-CC-TC'], [u'HM-WDS100-C6-O-2'], [u'HM-WDS100-C6-O'], [u'HM-TC-IT-WM-W-EU'], [u'HM-WDS40-TH-I-2'], [u'HM-WDC7000'], [u'HMIP-WTH'], [u'HmIP-WTH-2'], [u'HmIP-STH'], [u'HmIP-STHD'], [u'HmIP-BWTH'], [u'HmIP-BWTH24'] ]:
+#      yield line, { }
+
+def check_homematic_humidity(item, params, parsed):
+  for line in parsed:
+    if line == item:
+      data = parsed[line]
+      temperature = data.get('TEMPERATURE', data.get('ACTUAL_TEMPERATURE', None))
+      humidity = data.get('HUMIDITY', None)
+
+      if humidity is None or temperature is None:
+        return 3, 'Humidity or temperature are not available'
+
+      temperature = float(temperature[0])
+      humidity = float(humidity[0])
+
+      if humidity <= params['critical'][0] or humidity >= params['critical'][1]:
+        state = 2
+      elif humidity <= params['warning'][0] or humidity >= params['warning'][1]:
+        state = 1
+      else:
+        state = 0
+
+      message = "Temperature: %f, Humidity: %f" % (temperature, humidity)
+      perfdata = [
+        ('temperature', temperature),
+        ('humidity', humidity),
+      ]
+
+      return state, message, perfdata
+
+factory_settings['homematic_humidity_default_levels'] = {
+    'warning' : (40, 60),
+    'critical': (35, 65),
+}
+
+homematic_humidity_default_levels = { }
+
+check_info['homematic.humidity'] = {
+  'check_function':          check_homematic_humidity,
+  'inventory_function':      inventory_homematic_humidity,
+  'service_description':     "Humidity %s",
+  'group':                   'homematic_humidity',
+  'default_levels_variable': 'homematic_humidity_default_levels',
+  'has_perfdata':            True,
+}
+
+def inventory_homematic_dutycycle(parsed):
+  for line in parsed:
+    data = parsed[line]
+    if isinstance(data, dict) and data.get('DUTY_CYCLE', None) is not None:
+      yield line, { }
+
+def check_homematic_dutycycle(item, params, parsed):
+  for line in parsed:
+    if line == item:
+      data = parsed[line]
+      dutycycle = data.get('DUTY_CYCLE', None)
+
+      if dutycycle is None :
+        return 3, 'Duty cycle is not available'
+
+      dutycycle = float(dutycycle[0])
+      if dutycycle >= params['critical']:
+        state = 2
+      elif dutycycle >= params['warning']:
+        state = 1
+      else:
+        state = 0
+
+      message = "Duty cycle: %f" % (dutycycle)
+      perfdata = [
+        ('dutycycle', dutycycle, params['warning'], params['critical'], 0, 100),
+      ]
+
+      return state, message, perfdata
+
+factory_settings['homematic_dutycycle_default_levels'] = {
+    'warning' : 50,
+    'critical': 70,
+}
+
+homematic_dutycycle_default_levels = { }
+
+check_info['homematic.dutycycle'] = {
+  'check_function':          check_homematic_dutycycle,
+  'inventory_function':      inventory_homematic_dutycycle,
+  'service_description':     "Duty cycle %s",
+  'group':                   'homematic_dutycycle',
+  'default_levels_variable': 'homematic_dutycycle_default_levels',
+  'has_perfdata':            True,
+}
+
