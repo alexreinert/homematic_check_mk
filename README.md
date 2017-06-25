@@ -11,6 +11,7 @@ At the moment there are some Plugins for the check_mk server implemented:
 - Check for Devices with Low Batteries (All devices)
 - Check for Unreachable devices (All devices)
 - Check for all other service messages (All devices)
+- Check for Dutycycle (CCU and all connected LAN GW)
 - Check for Humidity with configurable limits (Only channels in Gewerk Monitored)
 
 Don't hesitate to ask for additional check plugins.
