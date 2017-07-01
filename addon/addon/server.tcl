@@ -79,6 +79,10 @@ proc handle_connection { channelId clientAddress clientPort } {
       }
     }
 
+    foreach plugin [glob -nocomplain "[file dirname [info script]]/plugins/*"] {
+      puts $channelId "[exec $plugin]"
+    }
+
     flush $channelId
 
     close $channelId

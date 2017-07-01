@@ -13,6 +13,8 @@ fi
 # create necessary directories
 mkdir -p ${ADDON_DIR}
 chmod 755 ${ADDON_DIR}
+mkdir -p ${ADDON_DIR}/plugins
+chmod 755 ${ADDON_DIR}/plugins
 mkdir -p ${RCD_DIR}
 chmod 755 ${RCD_DIR}
 
