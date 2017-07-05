@@ -106,27 +106,30 @@ proc get_homematic_check_result { } {
 
     foreach (_svcId, dom.GetObject(ID_SERVICES).EnumUsedIDs()) {
       _svc = dom.GetObject(_svcId);
-      if (_svc.AlState() == asOncoming) {
+      if (_svc && _svc.AlState() == asOncoming) {
         _dp = dom.GetObject(_svc.AlTriggerDP());
         _ch = dom.GetObject(_dp.Channel());
         _dev = dom.GetObject(_ch.Device());
-        
+
         WriteLine("SVC_MSG;" # _dev.Name() # ";" # _svc.Name().StrValueByIndex (".", 1).StrValueByIndex ("-", 0) # ";" # _dp.Timestamp());
       }
     }
 
-    foreach (_chId, dom.GetObject("Monitored").EnumUsedIDs()) {
-      _ch = dom.GetObject(_chId);
+    _svc = dom.GetObject("Monitored");
+    if (_svc) {
+      foreach (_chId, _svc.EnumUsedIDs()) {
+        _ch = dom.GetObject(_chId);
 
-      _dev = dom.GetObject(_ch.Device());
-      WriteLine(_ch.Name() # ";HSSTYPE;" # _dev.HssType());
+        _dev = dom.GetObject(_ch.Device());
+        WriteLine(_ch.Name() # ";HSSTYPE;" # _dev.HssType());
 
-      foreach (_dpId, _ch.DPs()) {
-        _dp = dom.GetObject(_dpId);
+        foreach (_dpId, _ch.DPs()) {
+          _dp = dom.GetObject(_dpId);
 
-        if (_dp.Value()) {
-          _name = _dp.Name().StrValueByIndex(".", 2);
-          WriteLine(_ch.Name() # ";" # _name # ";" # _dp.Value() # ";" # _dp.Timestamp());
+          if (_dp.Value()) {
+            _name = _dp.Name().StrValueByIndex(".", 2);
+            WriteLine(_ch.Name() # ";" # _name # ";" # _dp.Value() # ";" # _dp.Timestamp());
+          }
         }
       }
     }
