@@ -48,17 +48,19 @@ proc handle_connection { channelId clientAddress clientPort } {
     puts $channelId "<<<lnx_if:sep(58)>>>"
     puts $channelId "[exec sed 1,2d /proc/net/dev]"
 
+    puts $channelId "<<<df>>>"
     if { [regexp CCU2 [exec grep Hardware < /proc/cpuinfo]] == 0 } {
-        puts $channelId "<<<df>>>"
         puts $channelId "[exec df -PTk | sed 1d]"
-
-        puts $channelId "<<<mounts>>>"
-        puts $channelId "[exec grep ^/dev < /proc/mounts]"
-
-        puts $channelId "<<<diskstat>>>"
-        puts $channelId "[clock seconds]"
-        puts $channelId "[exec egrep { (x?[shv]d[a-z]*|cciss/c[0-9]+d[0-9]+|emcpower[a-z]+|dm-[0-9]+|VxVM.*|mmcblk.*|dasd[a-z]*|bcache[0-9]+|nvme[0-9]+n[0-9]+) } < /proc/diskstats]"
+    } else {
+        puts $channelId "[exec df -Pk | sed 1d]"
     }
+
+    puts $channelId "<<<mounts>>>"
+    puts $channelId "[exec egrep ^(/dev|ubi) < /proc/mounts]"
+
+    puts $channelId "<<<diskstat>>>"
+    puts $channelId "[clock seconds]"
+    puts $channelId "[exec egrep { (x?[shv]d[a-z]*|cciss/c[0-9]+d[0-9]+|emcpower[a-z]+|dm-[0-9]+|VxVM.*|mmcblk.*|dasd[a-z]*|bcache[0-9]+|nvme[0-9]+n[0-9]+|mtdblock.+) } < /proc/diskstats]"
 
     if { [file exists /usr/bin/ntpq] == 1 } {
         puts $channelId "<<<ntp>>>"
@@ -80,7 +82,7 @@ proc handle_connection { channelId clientAddress clientPort } {
     }
 
     foreach plugin [glob -nocomplain "[file dirname [info script]]/plugins/*"] {
-      puts $channelId "[exec $plugin]"
+      puts $channelId [exec $plugin]
     }
 
     flush $channelId
@@ -110,7 +112,7 @@ proc get_homematic_check_result { } {
         _dp = dom.GetObject(_svc.AlTriggerDP());
         _ch = dom.GetObject(_dp.Channel());
         _dev = dom.GetObject(_ch.Device());
-
+        
         WriteLine("SVC_MSG;" # _dev.Name() # ";" # _svc.Name().StrValueByIndex (".", 1).StrValueByIndex ("-", 0) # ";" # _dp.Timestamp());
       }
     }

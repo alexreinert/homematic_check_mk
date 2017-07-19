@@ -71,10 +71,6 @@ def inventory_homematic_humidity(parsed):
       if temperature is not None and humidity is not None:
         yield line, { }
 
-#    data = parsed[line]
-#    if isinstance(data, dict) and data.get('HSSTYPE', 'UNKNOWN') in [ [u'HM-WDS10-TH-O'], [u'HM-WDS20-TH-O'], [u'HM-WDS40-TH-I'], [u'HM-CC-TC'], [u'HM-WDS100-C6-O-2'], [u'HM-WDS100-C6-O'], [u'HM-TC-IT-WM-W-EU'], [u'HM-WDS40-TH-I-2'], [u'HM-WDC7000'], [u'HMIP-WTH'], [u'HmIP-WTH-2'], [u'HmIP-STH'], [u'HmIP-STHD'], [u'HmIP-BWTH'], [u'HmIP-BWTH24'] ]:
-#      yield line, { }
-
 def check_homematic_humidity(item, params, parsed):
   for line in parsed:
     if line == item:
@@ -85,6 +81,7 @@ def check_homematic_humidity(item, params, parsed):
       if humidity is None or temperature is None:
         return 3, 'Humidity or temperature are not available'
 
+      date = humidity[1]
       temperature = float(temperature[0])
       humidity = float(humidity[0])
 
@@ -95,7 +92,7 @@ def check_homematic_humidity(item, params, parsed):
       else:
         state = 0
 
-      message = "Temperature: %f, Humidity: %f" % (temperature, humidity)
+      message = "Temperature: %f, Humidity: %f (last change: %s)" % (temperature, humidity, date)
       perfdata = [
         ('temperature', temperature),
         ('humidity', humidity),
