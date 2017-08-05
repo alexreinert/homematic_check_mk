@@ -49,10 +49,14 @@ proc handle_connection { channelId clientAddress clientPort } {
     puts $channelId "[exec sed 1,2d /proc/net/dev]"
 
     puts $channelId "<<<df>>>"
-    if { [regexp CCU2 [exec grep Hardware < /proc/cpuinfo]] == 0 } {
-        puts $channelId "[exec df -PTk | sed 1d]"
-    } else {
+    if { [exec busybox | sed -n 1p | awk { { print $2 } }] == "v1.20.2" } {
         puts $channelId "[exec df -Pk | sed 1d]"
+    } else {
+        puts $channelId "[exec df -PTk | sed 1d]"
+        puts $channelId "<<<df>>>"
+        puts $channelId "\[df_inodes_start\]"
+        puts $channelId "[exec df -PTi | sed 1d]"
+        puts $channelId "\[df_inodes_end\]"
     }
 
     puts $channelId "<<<mounts>>>"
@@ -146,7 +150,7 @@ proc get_homematic_bidcos_devices { } {
     }
   }
 }
-                                                  
+
 proc read_var { filename varname } {
   set fd [open $filename r]
   set var ""
@@ -162,7 +166,7 @@ proc read_var { filename varname } {
 proc get_version { } {
   return [read_var /boot/VERSION VERSION]
 }
-                                                                    
+
 proc main { } {
   startup
 
@@ -184,4 +188,3 @@ if { [catch { main } err] } then {
   log $err
   exit 1
 }
-
