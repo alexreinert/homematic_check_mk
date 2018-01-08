@@ -23,7 +23,7 @@ case "$1" in
 
   info)
     echo "Info: <b>(Inoffical) check_mk agent</b>"
-    echo "Version: 1.2"
+    echo "Version: 1.3"
     echo "Name: check_mk_agent"
     echo "Operations: uninstall restart"
     ;;

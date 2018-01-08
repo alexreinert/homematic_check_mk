@@ -5,6 +5,8 @@ CONFIG_DIR=/usr/local/etc/config
 ADDON_DIR=/usr/local/addons/${ADDONNAME}
 RCD_DIR=${CONFIG_DIR}/rc.d
 
+mount /usr/local || true
+
 # create necessary directories
 mkdir -p ${ADDON_DIR}
 chmod 755 ${ADDON_DIR}
