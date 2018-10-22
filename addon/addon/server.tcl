@@ -66,7 +66,7 @@ proc handle_connection { channelId clientAddress clientPort } {
     puts $channelId "[exec egrep ^(/dev|ubi) < /proc/mounts]"
 
     puts $channelId "<<<ps>>>"
-    puts $channelId "[exec sh -c {ps ax -o user,vsz,rss,time,etime,pid,args | sed -e 1d -e 's/ *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) */(\1,0,0,00:00:00\/00:00:00,\6) /'}]"
+    puts $channelId "[exec sh -c {ps ax -o user,vsz,rss,pid,args | sed -e 1d -e 's/ *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) */(\1,0,0,00:00:00\/00:00:00,\4) /'}]"
 
     puts $channelId "<<<diskstat>>>"
     puts $channelId "[clock seconds]"
