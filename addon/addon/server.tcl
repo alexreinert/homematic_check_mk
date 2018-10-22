@@ -47,6 +47,9 @@ proc handle_connection { channelId clientAddress clientPort } {
 
     puts $channelId "<<<lnx_if:sep(58)>>>"
     puts $channelId "[exec sed 1,2d /proc/net/dev]"
+    if { [file exists /usr/sbin/ethtool] } {
+      puts $channelId [exec sh -c {sed -e 1,2d /proc/net/dev | cut -d':' -f1 | sort | while read eth; do echo "[$eth]"; ethtool "$eth" | grep -E '(Speed|Duplex|Link detected|Auto-negotiation):'; echo -e "\tAddress: $(cat "/sys/class/net/$eth/address")\n"; done}]
+    }
 
     puts $channelId "<<<df>>>"
     if { [exec busybox | sed -n 1p | awk { { print $2 } }] == "v1.20.2" } {
@@ -61,6 +64,9 @@ proc handle_connection { channelId clientAddress clientPort } {
 
     puts $channelId "<<<mounts>>>"
     puts $channelId "[exec egrep ^(/dev|ubi) < /proc/mounts]"
+
+    puts $channelId "<<<ps>>>"
+    puts $channelId "[exec sh -c {ps ax -o user,vsz,rss,pid,args | sed -e 1d -e 's/ *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) */(\1,0,0,00:00:00\/00:00:00,\4) /'}]"
 
     puts $channelId "<<<diskstat>>>"
     puts $channelId "[clock seconds]"
