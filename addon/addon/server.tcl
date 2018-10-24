@@ -170,7 +170,11 @@ proc read_var { filename varname } {
 }
 
 proc get_version { } {
-  return [read_var /boot/VERSION VERSION]
+  if { [file exists /VERSION] == 1 } {
+    return [read_var /VERSION VERSION]
+  } else {
+    return [read_var /boot/VERSION VERSION]
+  }
 }
 
 proc main { } {
