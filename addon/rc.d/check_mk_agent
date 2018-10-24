@@ -8,6 +8,12 @@ RCDDIR=/usr/local/etc/config/rc.d
 case "$1" in
 
   ""|start)
+    rm -f /usr/local/addons/${ADDONNAME}/waitmax 2>/dev/null
+    if [ "$(uname -m)" == "armv5tejl" ]; then
+      ln -s /usr/local/addons/${ADDONNAME}/waitmax-ccu2 /usr/local/addons/${ADDONNAME}/waitmax
+    else
+      ln -s /usr/local/addons/${ADDONNAME}/waitmax-ccu3 /usr/local/addons/${ADDONNAME}/waitmax
+    fi
     tclsh $ADDONDIR/server.tcl &
     ;;
 
@@ -23,7 +29,7 @@ case "$1" in
 
   info)
     echo "Info: <b>(Inoffical) check_mk agent</b>"
-    echo "Version: 1.3"
+    echo "Version: 1.4"
     echo "Name: check_mk_agent"
     echo "Operations: uninstall restart"
     ;;
