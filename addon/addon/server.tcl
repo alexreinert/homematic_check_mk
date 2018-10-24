@@ -27,9 +27,9 @@ proc handle_connection { channelId clientAddress clientPort } {
     puts $channelId [string trim [load_from_file /proc/vmstat]]
     puts $channelId [string trim [load_from_file /proc/stat]]
 
-    if { [file exists /sys/class/thermal/thermal_zone0/temp] == 1} {
+    if { [file exists /sys/class/thermal/thermal_zone0] == 1} {
         puts $channelId "<<<lnx_thermal>>>"
-        puts $channelId "thermal_zone0 enabled [string trim [load_from_file /sys/class/thermal/thermal_zone0/type]] [string trim [load_from_file /sys/class/thermal/thermal_zone0/temp]]"
+        puts $channelId [exec sh -c {for F in /sys/class/thermal/thermal_zone*; do if [ ! -e "$F/mode" ] || [ "$(cat ${F}/mode)" == "disabled" ]; then continue; fi; echo -n "${F##*/} "; for m in mode type temp; do cat "$F"/${m} 2>/dev/null | tr \\n " "; done; for i in $(seq 1 $(ls $F/trip_point_*_type 2>/dev/null| wc -l)); do cat "$F"/trip_point_${i}_temp "$F"/trip_point_${i}_type 2>/dev/null | tr \\n " "; done; echo; done}]
     }
 
     if { [file exists /proc/net/tcp6] == 1 } {
