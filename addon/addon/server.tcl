@@ -85,6 +85,11 @@ proc handle_connection { channelId clientAddress clientPort } {
         puts $channelId "[exec /usr/local/addons/check_mk_agent/waitmax 5 /usr/bin/ntpq -np | sed -e 1,2d -e {s/^\(.\)/\1 /} -e {s/^ /%/}]"
     }
 
+    if { [file exists /usr/bin/chronyc] == 1 } {
+        puts $channelId "<<<chrony>>>"
+        puts $channelId "[exec /usr/local/addons/check_mk_agent/waitmax 5 /usr/bin/chronyc -n tracking]"
+    }
+
     puts $channelId "<<<homematic:sep(59)>>>"
     puts $channelId [string trim [get_homematic_check_result]]
     foreach dev [xmlrpc http://127.0.0.1:2001/ listBidcosInterfaces] {
