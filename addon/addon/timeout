@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# wrapper script to either directly call /usr/bin/timeout or to simply
+# call an own shell-based implementation. This script is CCU2, CCU3 and
+# RaspberryMatic compatible.
+#
+# Copyright (c) 2019 Jens Maus <mail@jens-maus.de>
+# Apache 2.0 License applies.
+#
+
+# if a BusyBox timeout command is already present we use that
+# one. Instead we use shell functionality to replicate the same
+# functionality in terminating commands after a certain amount
+# of time.
+if [[ -n "$(type -p timeout 2>&1)" ]]; then
+  timeout "$@"
+  exit $?
+else
+  # default values
+  maxtime=10
+  signal=SIGTERM
+
+  # Options
+  O=$(getopt -- :t:s: "$@") || exit 1
+  eval set -- "${O}"
+  while true; do
+    case "${1}" in
+      -t) maxtime=${2}; shift 2;;
+      -s) signal=${2}; shift 2;;
+      --) shift; break;;
+      *)  exit 1;;
+    esac
+  done
+
+  # lets sleep first
+  sleep "${maxtime}" &
+  SPID=${!}
+
+  # execute the actual command
+  ("$@"; RETVAL=$?; kill ${SPID}; exit ${RETVAL}) &
+  CPID=${!}
+  wait %1
+  SLEEPRETVAL=$?
+  if [[ ${SLEEPRETVAL} -eq 0 ]] && kill -${signal} ${CPID} >/dev/null 2>&1 ; then
+    RETVAL=143
+    #(sleep 1; kill -9 ${CPID} >/dev/null 2>&1)&
+    wait %2
+  else
+    wait %2
+    RETVAL=$?
+  fi
+  exit $RETVAL
+fi

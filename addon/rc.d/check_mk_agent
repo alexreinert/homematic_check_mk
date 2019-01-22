@@ -8,12 +8,6 @@ RCDDIR=/usr/local/etc/config/rc.d
 case "$1" in
 
   ""|start)
-    rm -f /usr/local/addons/${ADDONNAME}/timeout 2>/dev/null
-    if [ "$(uname -m)" == "armv5tejl" ]; then
-      ln -s /usr/local/addons/${ADDONNAME}/timeout-ccu2 /usr/local/addons/${ADDONNAME}/timeout
-    else
-      ln -s /usr/local/addons/${ADDONNAME}/timeout-ccu3 /usr/local/addons/${ADDONNAME}/timeout
-    fi
     tclsh $ADDONDIR/server.tcl &
     ;;
 

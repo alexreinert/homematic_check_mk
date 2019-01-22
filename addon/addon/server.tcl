@@ -34,10 +34,10 @@ proc handle_connection { channelId clientAddress clientPort } {
 
     if { [file exists /proc/net/tcp6] == 1 } {
         puts $channelId "<<<tcp_conn_stats>>>"
-        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout -s 1 10 cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk { /:/ { c[$4]++; } END { for (x in c) { print x, c[x]; } } }]"
+        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout -s 1 -t 10 cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk { /:/ { c[$4]++; } END { for (x in c) { print x, c[x]; } } }]"
     } else {
         puts $channelId "<<<tcp_conn_stats>>>"
-        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout -s 1 10 cat /proc/net/tcp 2>/dev/null | awk { /:/ { c[$4]++; } END { for (x in c) { print x, c[x]; } } }]"
+        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout -s 1 -t 10 cat /proc/net/tcp 2>/dev/null | awk { /:/ { c[$4]++; } END { for (x in c) { print x, c[x]; } } }]"
     }
 
     puts $channelId "<<<lnx_if>>>"
@@ -67,10 +67,10 @@ proc handle_connection { channelId clientAddress clientPort } {
 
     if { [file exists /bin/stat] == 1 } {
       puts $channelId "<<<nfsmounts>>>"
-      puts $channelId [exec sh -c {sed -n '/ nfs4\? /s/[^ ]* \([^ ]*\) .*/\1/p' </proc/mounts | sed 's/\\040/ /g' | while read MP; do /usr/local/addons/check_mk_agent/timeout -s 9 5 stat -f -c "$MP ok %b %f %a %s" "$MP" || echo "$MP hanging 0 0 0 0"; done}]
+      puts $channelId [exec sh -c {sed -n '/ nfs4\? /s/[^ ]* \([^ ]*\) .*/\1/p' </proc/mounts | sed 's/\\040/ /g' | while read MP; do /usr/local/addons/check_mk_agent/timeout -s 9 -t 5 stat -f -c "$MP ok %b %f %a %s" "$MP" || echo "$MP hanging 0 0 0 0"; done}]
 
       puts $channelId "<<<cifsmounts>>>"
-      puts $channelId [exec sh -c {sed -n '/ cifs\? /s/[^ ]* \([^ ]*\) .*/\1/p' </proc/mounts | sed 's/\\040/ /g' | while read MP; do if [ ! -r "$MP" ]; then echo "$MP Permission denied"; else /usr/local/addons/check_mk_agent/timeout -s 9 2 stat -f -c "$MP ok %b %f %a %s" "$MP" || echo "$MP hanging 0 0 0 0"; fi; done}]
+      puts $channelId [exec sh -c {sed -n '/ cifs\? /s/[^ ]* \([^ ]*\) .*/\1/p' </proc/mounts | sed 's/\\040/ /g' | while read MP; do if [ ! -r "$MP" ]; then echo "$MP Permission denied"; else /usr/local/addons/check_mk_agent/timeout -s 9 -t 2 stat -f -c "$MP ok %b %f %a %s" "$MP" || echo "$MP hanging 0 0 0 0"; fi; done}]
     }
 
     puts $channelId "<<<ps>>>"
@@ -82,12 +82,12 @@ proc handle_connection { channelId clientAddress clientPort } {
 
     if { [file exists /usr/bin/ntpq] == 1 } {
         puts $channelId "<<<ntp>>>"
-        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout 5 /usr/bin/ntpq -np | sed -e 1,2d -e {s/^\(.\)/\1 /} -e {s/^ /%/}]"
+        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout -t 5 /usr/bin/ntpq -np | sed -e 1,2d -e {s/^\(.\)/\1 /} -e {s/^ /%/}]"
     }
 
     if { [file exists /usr/bin/chronyc] == 1 } {
         puts $channelId "<<<chrony>>>"
-        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout 5 /usr/bin/chronyc -n tracking]"
+        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout -t 5 /usr/bin/chronyc -n tracking]"
     }
 
     puts $channelId "<<<homematic:sep(59)>>>"
