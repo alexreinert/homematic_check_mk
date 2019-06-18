@@ -21,16 +21,19 @@ else
   signal=SIGTERM
 
   # Options
-  O=$(getopt -- :t:s: "$@") || exit 1
+  O=$(getopt -- :s: "$@") || exit 1
   eval set -- "${O}"
   while true; do
     case "${1}" in
-      -t) maxtime=${2}; shift 2;;
       -s) signal=${2}; shift 2;;
       --) shift; break;;
       *)  exit 1;;
     esac
   done
+
+  # maxtime has to be the second argument
+  maxtime=${1}
+  shift
 
   # lets sleep first
   sleep "${maxtime}" &
