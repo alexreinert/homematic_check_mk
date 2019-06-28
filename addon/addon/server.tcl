@@ -6,7 +6,7 @@ source [file join [file dirname [info script]] common.tcl]
 
 proc handle_connection { channelId clientAddress clientPort } {
   if { [catch {
-    log "connection accepted from $clientAddress:$clientPort"
+    #log "connection accepted from $clientAddress:$clientPort"
 
     puts $channelId "<<<check_mk>>>"
     puts $channelId "Version: [get_version]"
