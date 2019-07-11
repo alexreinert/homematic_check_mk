@@ -6,7 +6,7 @@ source [file join [file dirname [info script]] common.tcl]
 
 proc handle_connection { channelId clientAddress clientPort } {
   if { [catch {
-    log "connection accepted from $clientAddress:$clientPort"
+    #log "connection accepted from $clientAddress:$clientPort"
 
     puts $channelId "<<<check_mk>>>"
     puts $channelId "Version: [get_version]"
@@ -27,17 +27,17 @@ proc handle_connection { channelId clientAddress clientPort } {
     puts $channelId [string trim [load_from_file /proc/vmstat]]
     puts $channelId [string trim [load_from_file /proc/stat]]
 
-    if { [file exists /sys/class/thermal/thermal_zone0/temp] == 1} {
+    if { [file exists /sys/class/thermal/thermal_zone0] == 1} {
         puts $channelId "<<<lnx_thermal>>>"
-        puts $channelId "thermal_zone0 enabled [string trim [load_from_file /sys/class/thermal/thermal_zone0/type]] [string trim [load_from_file /sys/class/thermal/thermal_zone0/temp]]"
+        puts $channelId [exec sh -c {for F in /sys/class/thermal/thermal_zone*; do if [ ! -e "$F/mode" ] || [ "$(cat ${F}/mode)" == "disabled" ]; then continue; fi; echo -n "${F##*/} "; for m in mode type temp; do cat "$F"/${m} 2>/dev/null | tr \\n " "; done; for i in $(seq 1 $(ls $F/trip_point_*_type 2>/dev/null| wc -l)); do cat "$F"/trip_point_${i}_temp "$F"/trip_point_${i}_type 2>/dev/null | tr \\n " "; done; echo; done}]
     }
 
     if { [file exists /proc/net/tcp6] == 1 } {
         puts $channelId "<<<tcp_conn_stats>>>"
-        puts $channelId "[exec cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk { /:/ { c[$4]++; } END { for (x in c) { print x, c[x]; } } }]"
+        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout -s 1 10 cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk { /:/ { c[$4]++; } END { for (x in c) { print x, c[x]; } } }]"
     } else {
         puts $channelId "<<<tcp_conn_stats>>>"
-        puts $channelId "[exec cat /proc/net/tcp 2>/dev/null | awk { /:/ { c[$4]++; } END { for (x in c) { print x, c[x]; } } }]"
+        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout -s 1 10 cat /proc/net/tcp 2>/dev/null | awk { /:/ { c[$4]++; } END { for (x in c) { print x, c[x]; } } }]"
     }
 
     puts $channelId "<<<lnx_if>>>"
@@ -65,6 +65,14 @@ proc handle_connection { channelId clientAddress clientPort } {
     puts $channelId "<<<mounts>>>"
     puts $channelId "[exec egrep ^(/dev|ubi) < /proc/mounts]"
 
+    if { [file exists /bin/stat] == 1 } {
+      puts $channelId "<<<nfsmounts>>>"
+      puts $channelId [exec sh -c {sed -n '/ nfs4\? /s/[^ ]* \([^ ]*\) .*/\1/p' </proc/mounts | sed 's/\\040/ /g' | while read MP; do /usr/local/addons/check_mk_agent/timeout -s 9 5 stat -f -c "$MP ok %b %f %a %s" "$MP" || echo "$MP hanging 0 0 0 0"; done}]
+
+      puts $channelId "<<<cifsmounts>>>"
+      puts $channelId [exec sh -c {sed -n '/ cifs\? /s/[^ ]* \([^ ]*\) .*/\1/p' </proc/mounts | sed 's/\\040/ /g' | while read MP; do if [ ! -r "$MP" ]; then echo "$MP Permission denied"; else /usr/local/addons/check_mk_agent/timeout -s 9 2 stat -f -c "$MP ok %b %f %a %s" "$MP" || echo "$MP hanging 0 0 0 0"; fi; done}]
+    }
+
     puts $channelId "<<<ps>>>"
     puts $channelId "[exec sh -c {ps ax -o user,vsz,rss,pid,args | sed -e 1d -e 's/ *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) *\([^ ]*\) */(\1,0,0,00:00:00\/00:00:00,\4) /'}]"
 
@@ -74,7 +82,12 @@ proc handle_connection { channelId clientAddress clientPort } {
 
     if { [file exists /usr/bin/ntpq] == 1 } {
         puts $channelId "<<<ntp>>>"
-        puts $channelId "[exec ntpq -np | sed -e 1,2d -e {s/^\(.\)/\1 /} -e {s/^ /%/}]"
+        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout 5 /usr/bin/ntpq -np | sed -e 1,2d -e {s/^\(.\)/\1 /} -e {s/^ /%/}]"
+    }
+
+    if { [file exists /usr/bin/chronyc] == 1 } {
+        puts $channelId "<<<chrony>>>"
+        puts $channelId "[exec /usr/local/addons/check_mk_agent/timeout 5 /usr/bin/chronyc -n tracking]"
     }
 
     puts $channelId "<<<homematic:sep(59)>>>"
@@ -170,7 +183,11 @@ proc read_var { filename varname } {
 }
 
 proc get_version { } {
-  return [read_var /boot/VERSION VERSION]
+  if { [file exists /VERSION] == 1 } {
+    return [read_var /VERSION VERSION]
+  } else {
+    return [read_var /boot/VERSION VERSION]
+  }
 }
 
 proc main { } {
