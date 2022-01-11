@@ -31,7 +31,7 @@ def check_homematic(item, params, parsed):
   if messages is not None:
     for msg in messages:
       if item == 'Low Battery devices':
-        if msg[1] == 'LOWBAT':
+        if msg[1] in [ 'LOWBAT', 'LOW_BAT' ]:
           state = 2
           devices.append(msg[0])
       elif item == 'Unreachable devices':
