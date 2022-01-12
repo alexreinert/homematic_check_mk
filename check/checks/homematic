@@ -31,7 +31,7 @@ def check_homematic(item, params, parsed):
   if messages is not None:
     for msg in messages:
       if item == 'Low Battery devices':
-        if msg[1] == 'LOWBAT':
+        if msg[1] in [ 'LOWBAT', 'LOW_BAT' ]:
           state = 2
           devices.append(msg[0])
       elif item == 'Unreachable devices':
@@ -42,7 +42,7 @@ def check_homematic(item, params, parsed):
           state = max(state, 1)
           devices.append(msg[0])
       elif item == 'Service Messages':
-        if msg[1] not in [ 'LOWBAT', 'UNREACH', 'STICKY_UNREACH' ]:
+        if msg[1] not in [ 'LOWBAT', 'LOW_BAT', 'UNREACH', 'STICKY_UNREACH' ]:
           if msg[1] in [ 'CONFIG_PENDING', 'DEVICE_IN_BOOTLOADER', 'UPDATE_PENDING', 'USBH_POWERFAIL' ]:
             state = max(state, 1)
           else:
